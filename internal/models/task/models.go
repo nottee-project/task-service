@@ -2,13 +2,11 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Task struct {
 	Id        string    `db:"id" json:"id"`
-	UserId    uuid.UUID `db:"user_id" json:"user_id"`
+	UserId    string    `db:"user_id" json:"user_id"`
 	Title     string    `db:"title" json:"title"`
 	Body      string    `db:"body" json:"body"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
@@ -16,7 +14,7 @@ type Task struct {
 }
 
 type CreateTaskParams struct {
-	UserId uuid.UUID `json:"user_id"`
+	UserId string `json:"user_id"`
 	Title  string `json:"title"`
 	Body   string `json:"body"`
 }
@@ -26,19 +24,19 @@ type Tasks struct {
 }
 
 type ListTasksParams struct {
-	UserId uuid.UUID `json:"user_id"`
+	UserId string `json:"user_id"`
 }
 
 type GetTaskResponse struct {
 	ID     string `db:"id"`
-	UserID uuid.UUID `db:"user_id"`
+	UserID string `db:"user_id"`
 	Title  string `db:"title"`
 	Body   string `db:"body"`
 }
 
 type UpdateTaskResponse struct {
 	Id        string
-	UserId    uuid.UUID
+	UserId    string
 	Title     string
 	Body      string
 	UpdatedAt time.Time

@@ -18,6 +18,7 @@ func RegisterRoutes(e *echo.Echo, authServiceURL string) error {
 	if err != nil {
 		return err
 	}
+
 	n := e.Group(prefix + "/task")
 	n.Use(mw_auth.AuthMiddleware(authServiceURL))
 
@@ -29,14 +30,9 @@ func RegisterRoutes(e *echo.Echo, authServiceURL string) error {
 	n.GET("/:id", taskHandler.GetTask)
 	n.DELETE("/:id", taskHandler.DeleteTask)
 
+	// e.POST("/webhook", handler.TelegramWebhookHandler)
+
 	e.GET("/test", taskHandler.TestTask)
-
-	// web := e.Group("")
-	// web.Use(
-	// 	mw_auth.AuthMiddleware(authServiceURL),
-	// )
-
-	// web.GET("", taskHandler.Index)
 
 	return nil
 }

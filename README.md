@@ -2,7 +2,7 @@
 
 ### 1) CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; - Для создания расширения для автоматического создания UUID v4 при создании объекта
 
-### 2) sudo docker exec -it go-task-service psql -h postgres -U feitan -d task
+### 2) sudo docker exec -it go-task-service psql -h postgres -U feitan -d post
 
 ### 3) Создание таблицы в postgres
 

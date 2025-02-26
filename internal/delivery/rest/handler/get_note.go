@@ -7,7 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (t *TaskHandler) DeleteTask(c echo.Context) error {
+func (t *TaskHandler) GetTask(c echo.Context) error {
 	userId, ok := c.Get("user_id").(string)
 	if !ok || userId == "" {
 		return c.JSON(http.StatusUnauthorized, map[string]string{
@@ -22,15 +22,12 @@ func (t *TaskHandler) DeleteTask(c echo.Context) error {
 		})
 	}
 
-	err := t.TaskSrv.DeleteTask(context.Background(), taskId, userId)
+	task, err := t.TaskSrv.GetTask(context.Background(), taskId, userId)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to delete task",
+			"error": "Failed to get task",
 		})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Task deleted successfully",
-	})
-
+	return c.JSON(http.StatusCreated, task)
 }
