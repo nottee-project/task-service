@@ -1,0 +1,14 @@
+env: "local"
+grpc:
+  port: 44044
+  timeout: 5s
+database: 
+  host: "postgres"
+  port: 5432
+  database: "feitan"
+  user: "feitan"
+  password: "gfhjkm1S"
+  sslmode: "disable"
+
+
+

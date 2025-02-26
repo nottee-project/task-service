@@ -1,24 +1,66 @@
 services:
   app:
     build:
-      context: ../
+      context: ..
       dockerfile: docker/dockerfile
     container_name: go-task-service
-    ports:
-      - "8080:8080"
-    volumes:
-      - ..:/app
-      - air-config:/root/.air
     env_file:
       - ../.env
+    depends_on:
+      - db
     networks:
-      - shared_network
+      - app-network
+    ports:
+      - "44044:44044"
+
+    volumes:
+      - .:/app
+      - air-config:/root/.air
+
+  db:
+    image: postgres:14-alpine
+    container_name: task-db
+    env_file:
+      - ../.env
+    # environment:
+    #   POSTGRES_USER: ${POSTGRES_USER}
+    #   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    #   POSTGRES_DB: ${POSTGRES_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+    ports:
+      - "5432:5432"
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   air-config:
   pgdata:
 
-networks:
-  shared_network:
-    external: true
+
+# networks:
+#   shared_network:
+#     external: true
+# services:
+#   app:
+#     build:
+#       context: ../
+#       dockerfile: docker/dockerfile
+#     container_name: go-task-service
+#     env_file:
+#       - ../.env
+#     networks:
+#       - shared_network
+#     ports:
+#       - '8080:8080'
+#     volumes:
+#       - ..:/app
+#       - air-config:/root/.air
+# volumes:
+#   air-config: null
+#   pgdata: null
 

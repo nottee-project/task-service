@@ -7,7 +7,7 @@ import (
 	"log"
 
 	"github.com/Masterminds/squirrel"
-	models "github.com/nottee-project/task_service/internal/models/task"
+	models "github.com/nottee-project/task_service/internal/domain/models"
 	"github.com/pkg/errors"
 
 	store "github.com/nottee-project/task_service/internal/adapter/store"
@@ -17,13 +17,11 @@ type TaskStore struct {
 	Store *store.Store
 }
 
-func (t *TaskStore) CreateTask(ctx context.Context, task models.CreateTaskParams) (models.Task, error) {
-	result := models.Task{}
-
+func (t *TaskStore) CreateTask(ctx context.Context, payload models.CreateTaskRequest) (result models.CreateTaskResponse, err error) {
 	sqlStr, args, err := squirrel.
 		Insert(tableNameTasks).
 		Columns(fieldNameUserId, fieldNameTitle, fieldNameBody).
-		Values(task.UserId, task.Title, task.Body).
+		Values(payload.UserId, payload.Title, payload.Body).
 		Suffix(fmt.Sprintf("RETURNING %s, %s, %s, %s, %s, %s",
 			fieldNameTaskId,
 			fieldNameUserId,
@@ -34,30 +32,28 @@ func (t *TaskStore) CreateTask(ctx context.Context, task models.CreateTaskParams
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 	if err != nil {
-		return models.Task{}, errors.Wrap(err, "ToSql")
+		return models.CreateTaskResponse{}, errors.Wrap(err, "ToSql")
 	}
 
 	log.Printf("SQL Query: %s, Args: %v", sqlStr, args)
 
 	err = t.Store.DB.Get(&result, sqlStr, args...)
 	if err != nil {
-		return models.Task{}, errors.Wrap(err, "Get")
+		return models.CreateTaskResponse{}, errors.Wrap(err, "Get")
 	}
 
 	return result, nil
 }
 
-func (t *TaskStore) UpdateTask(ctx context.Context, task models.Task) (models.UpdateTaskResponse, error) {
-	result := models.UpdateTaskResponse{}
-
+func (t *TaskStore) UpdateTask(ctx context.Context, payload models.UpdateTaskRequest) (result models.UpdateTaskResponse, err error) {
 	sqlStr, args, err := squirrel.
 		Update(tableNameTasks).
-		Set(fieldNameTitle, task.Title).
-		Set(fieldNameBody, task.Body).
+		// Set(fieldNameTitle, task.Title).
+		// Set(fieldNameBody, task.Body).
 		Set(fieldNameUpdatedAt, squirrel.Expr("NOW()")).
 		Where(squirrel.Eq{
-			fieldNameTaskId: task.Id,
-			fieldNameUserId: task.UserId,
+			fieldNameTaskId: payload.Id,
+			fieldNameUserId: payload.UserId,
 		}).
 		Suffix(fmt.Sprintf("RETURNING %s, %s, %s, %s, %s",
 			fieldNameTaskId,
@@ -89,16 +85,14 @@ func (t *TaskStore) UpdateTask(ctx context.Context, task models.Task) (models.Up
 	return result, nil
 }
 
-func (t *TaskStore) GetTask(ctx context.Context, taskId, userId string) (models.GetTaskResponse, error) {
-	result := models.GetTaskResponse{}
-
+func (t *TaskStore) GetTask(ctx context.Context, payload models.GetTaskRequest) (result models.GetTaskResponse, err error) {
 	query, args, err := squirrel.Select(
 		fieldNameTaskId, fieldNameUserId, fieldNameTitle, fieldNameBody,
 	).
 		From(tableNameTasks).
 		Where(squirrel.Eq{
-			fieldNameTaskId: taskId,
-			fieldNameUserId: userId,
+			fieldNameTaskId: payload.TaskId,
+			fieldNameUserId: payload.UserId,
 		}).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
@@ -117,51 +111,75 @@ func (t *TaskStore) GetTask(ctx context.Context, taskId, userId string) (models.
 	return result, nil
 }
 
-func (t *TaskStore) ListTasks(ctx context.Context, listParams models.ListTasksParams) ([]models.GetTaskResponse, error) {
-	result := make([]models.GetTaskResponse, 0)
+func (t *TaskStore) ListTasks(ctx context.Context, payload models.ListTasksRequest) (result models.ListTasksResponse, err error) {
+	res := make([]models.Task, 0)
 
 	query := squirrel.Select(
 		fieldNameTaskId, fieldNameUserId, fieldNameTitle, fieldNameBody,
 	).
 		From(tableNameTasks).
 		Where(squirrel.Eq{
-			fieldNameUserId: listParams.UserId,
+			fieldNameUserId: payload.UserId,
 		}).
 		PlaceholderFormat(squirrel.Dollar)
 
 	sqlStr, args, err := query.ToSql()
 	if err != nil {
 		log.Printf("Error generating SQL: %v", err)
-		return nil, errors.Wrap(err, "ToSql")
+		return models.ListTasksResponse{}, errors.Wrap(err, "ToSql")
 	}
 
 	log.Printf("Generated SQL: %s, Args: %v", sqlStr, args)
 
-	err = t.Store.DB.SelectContext(ctx, &result, sqlStr, args...)
+	err = t.Store.DB.SelectContext(ctx, &res, sqlStr, args...)
 	if err != nil {
 		log.Printf("Error executing query: %v", err)
-		return nil, errors.Wrap(err, "SelectContext")
+		return models.ListTasksResponse{}, errors.Wrap(err, "SelectContext")
+	}
+
+	result = models.ListTasksResponse{
+		Tasks: models.Tasks{
+			Tasks: res,
+		},
 	}
 
 	return result, nil
 }
-func (t *TaskStore) DeleteTask(ctx context.Context, taskID, userID string) error {
+
+func (t *TaskStore) DeleteTask(ctx context.Context, payload models.DeleteTaskRequest) (models.DeleteTaskResponse, error) {
+
 	sqlStr, args, err := squirrel.
 		Delete(tableNameTasks).
 		Where(squirrel.Eq{
-			fieldNameTaskId: taskID,
-			fieldNameUserId: userID,
+			fieldNameTaskId: payload.TaskId,
+			fieldNameUserId: payload.UserId,
 		}).
 		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 	if err != nil {
-		return errors.Wrap(err, "ToSql")
+		return models.DeleteTaskResponse{}, errors.Wrap(err, "ошибка формирования SQL-запроса")
 	}
 
-	_, err = t.Store.DB.ExecContext(ctx, sqlStr, args...)
+	res, err := t.Store.DB.ExecContext(ctx, sqlStr, args...)
 	if err != nil {
-		return errors.Wrap(err, "ExecContext")
+		return models.DeleteTaskResponse{}, errors.Wrap(err, "ошибка выполнения запроса")
 	}
 
-	return nil
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return models.DeleteTaskResponse{}, errors.Wrap(err, "ошибка получения количества затронутых строк")
+	}
+
+	var message string
+	if rowsAffected > 0 {
+		message = "Задача успешно удалена"
+	} else {
+		message = "Задача не найдена или уже удалена"
+	}
+
+	response := models.DeleteTaskResponse{
+		Message: message,
+	}
+
+	return response, nil
 }

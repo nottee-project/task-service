@@ -15,10 +15,10 @@ type Task struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
-type CreateTaskParams struct {
+type CreateTaskRequest struct {
 	UserId uuid.UUID `json:"user_id"`
-	Title  string `json:"title"`
-	Body   string `json:"body"`
+	Title  string    `json:"title"`
+	Body   string    `json:"body"`
 }
 
 type Tasks struct {
@@ -30,10 +30,10 @@ type ListTasksParams struct {
 }
 
 type GetTaskResponse struct {
-	ID     string `db:"id"`
+	ID     string    `db:"id"`
 	UserID uuid.UUID `db:"user_id"`
-	Title  string `db:"title"`
-	Body   string `db:"body"`
+	Title  string    `db:"title"`
+	Body   string    `db:"body"`
 }
 
 type UpdateTaskResponse struct {
